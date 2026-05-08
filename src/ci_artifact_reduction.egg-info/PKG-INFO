@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: ci_artifact_reduction
+Version: 0.0.4
+Summary: My package
+Author: muster
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Dynamic: license-file
+
+**Project description**
+*CI_Artifact Reduction*
+
+Filtering CI Artifacts based on Correlation of Indepndent Components and audio 

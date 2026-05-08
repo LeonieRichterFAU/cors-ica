@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ci_artifact_reduction"
+version = "0.0.4"
+description = "Pacakge to reduce artifacts in eeg from cochlear implant stimuli"
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.9"
+authors = [
+  {name = "muster"}
+]
+dependencies = []
