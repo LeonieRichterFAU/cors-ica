@@ -12,4 +12,4 @@ fs_eeg=1000
 attended_audio = raw.get_data()[31, :]
 print(attended_audio)
 
-cleaned_eeg= ci_artifact_reduction(raw, snr_threshold, fs_eeg, attended_audio, output_dir="/Users/leonierichter/Documents/2100_Work/2026_Uni_Chair_Senory_in_Neuroengineering", plot=True, metadata=True)
+cleaned_eeg= ci_artifact_reduction(raw, snr_threshold, fs_eeg, attended_audio, plot=True, metadata=True)

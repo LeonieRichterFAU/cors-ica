@@ -158,7 +158,7 @@ def peak_snr(correlation, fs, peak_win_negative, peak_win_pos):
     snr = 10 * np.log10(signal_power / noise_power)
 
     #calculate when peak occurs in seconds after 0 lag
-    peak_in_seconds_after_stimulus = (peak_value_idx - center) / fs
+    peak_in_seconds_after_stimulus = float((peak_value_idx - center) / fs)
 
 
     return snr, central_lags, peak_value_idx, peak_in_seconds_after_stimulus
@@ -222,30 +222,18 @@ def plotting(lags,corr,fs_eeg, snr, output_dir):
 def calculate_metadata(ics, exclude, snrs, peak_in_seconds_after_stimulus_s, output_dir):
     #values to save
     number_of_ics= ics.n_components_
-    print(f"Number of ICs: {number_of_ics}")
     number_excluded_ics = len(exclude) 
-    print(f"Excluded ICs: {number_excluded_ics} with indices {exclude}")
     percentage_remaining_ics = (number_of_ics - number_excluded_ics) / number_of_ics * 100
-    print (f"Percentage of remaining ICs: {percentage_remaining_ics:.2f}% ")
     excluded_snr_values = [round(float(snrs[ic]), 3) for ic in exclude]
-    print(f"Snr values of excluded ICs: {excluded_snr_values}")
     number_used_ics = number_of_ics - number_excluded_ics
     used_snr_indizes = [i for i in range(number_of_ics) if i not in exclude]
-    print(f"Used ICs: {number_used_ics} with indices {used_snr_indizes}")
     used_snr_values = [round(float(snrs[i]),3) for i in range(number_of_ics) if i not in exclude]
-    print(f"Snr values of used ICs: {used_snr_values}")
     max_snr= max(snrs)
-    print(f"Highest SNR values of all ICs: {max_snr:.3f} dB")
-    mean_peak_in_seconds_after_stimulus_s = np.mean(peak_in_seconds_after_stimulus_s) #NOTE array ausgeben lassen
-    print(f"Peak occurs on average at {mean_peak_in_seconds_after_stimulus_s:.3f} seconds after stimulus onset")
+    excluded_peak_times_in_seconds_after_stimulus = [peak_in_seconds_after_stimulus_s[i] for i in exclude]
+    mean_peak_in_seconds_after_stimulus_s = np.mean(excluded_peak_times_in_seconds_after_stimulus)
     mean_snr = np.mean(snrs)
-    print(f"Mean SNR of all ICs: {mean_snr:.3f} dB")
     mean_snr_cleaned = np.mean([snrs[i] for i in range(number_of_ics) if i not in exclude])
-    print(f"Mean SNR of remaining ICs: {mean_snr_cleaned:.3f} dB") #NOTE nicht so viel aussagekraft weil es ja das snr von dem signal ist was als artefakt gilt
     mean_snr_excluded = np.mean(excluded_snr_values) if excluded_snr_values else float('nan')
-    print(f"Mean SNR of excluded ICs: {mean_snr_excluded:.3f} dB")
-
-    file_path = output_dir / "eeg_metrics.csv"
 
     data = {
         "Number of independent components": number_of_ics,
@@ -258,7 +246,9 @@ def calculate_metadata(ics, exclude, snrs, peak_in_seconds_after_stimulus_s, out
         "Used ICs SNR values": used_snr_values,
         "Highest SNR": round(max_snr, 3),
         "Mean SNR": round(mean_snr, 3),
-        "Mean peak time in seconds after stimulus onset": round(mean_peak_in_seconds_after_stimulus_s, 3),
+        "Mean peak time in seconds after stimulus of excluded ICs": round(mean_peak_in_seconds_after_stimulus_s, 5),
+        "All peak times in seconds after stimulus": peak_in_seconds_after_stimulus_s,
+        "Excluded peak times in seconds after stimulus": excluded_peak_times_in_seconds_after_stimulus,
         "Mean SNR of remaining ICs": round(mean_snr_cleaned, 3),
         "Mean SNR of excluded ICs": round(mean_snr_excluded, 3),
     }
