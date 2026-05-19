@@ -124,7 +124,7 @@ def ci_artifact_reduction(raw, subject_id, trial_id, output_dir, snr_threshold, 
     
     #if plot is true save plot 
     if plot == True:
-        plotting(lags_s,corr_s,fs_eeg, snr_s, output_dir, subject_id, trial_id)
+        plotting(lags_s,corr_s,fs_eeg, snr_s, output_dir, subject_id, trial_id, peak_win_negative, peak_win_pos)
 
     # reconstruct EEG based on remaining ICs
     ics.exclude = exclude
@@ -136,7 +136,7 @@ def ci_artifact_reduction(raw, subject_id, trial_id, output_dir, snr_threshold, 
     
     
     if metadata == True: 
-        calculate_metadata(ics, exclude, snr_s, peak_in_seconds_after_stimulus_s, output_dir)
+        calculate_metadata(ics, exclude, snr_s, peak_in_seconds_after_stimulus_s, output_dir, subject_id, trial_id)
 
     print ('ganze Methode durchgelaufen')
 
@@ -188,7 +188,7 @@ def check_dimensions(audio, eeg_data):
     else:
         print(f"Check successful: Arrays have the same length. Audio: {len(audio)}, EEG: {eeg_data.shape[1]}")
 
-def plotting(lags_s,corr_s,fs_eeg, snr_s, output_dir, subject_id, trial_id):
+def plotting(lags_s,corr_s,fs_eeg, snr_s, output_dir, subject_id, trial_id, peak_win_negative, peak_win_pos):
     n = len(lags_s) 
 
     n_cols = 4
@@ -205,14 +205,14 @@ def plotting(lags_s,corr_s,fs_eeg, snr_s, output_dir, subject_id, trial_id):
         # 1. Convert lags to ms (Assuming 'lags' is in seconds, * 1000)
         lags_ms = (lags / 1000) * 1000 #NOTE wieso macht man hier geteilt durch und mal 1000
 
-        # 2. Main cross-correlation plot
+        # cross-correlation plot
         ax.plot(lags_ms, corr, color='dimgrey', linewidth=1.5)
 
-        # 3. Mark the search window (-5ms to 15ms) in grey
-        ax.axvspan(-5, 15, color='grey', alpha=0.3, label='Search Window')
+        # Mark the search window (-5ms to 15ms) in grey
+        ax.axvspan(peak_win_negative * 1000, peak_win_pos * 1000, color='grey', alpha=0.3, label='Search Window')
 
         
-        # 4. Highlight Peak within the window
+        # Highlight Peak within the window
         # Ensure fs_eeg and corr are available in your local scope
         n_samples = corr.shape[0]
         start_idx = n_samples // 2 - int(0.005 * fs_eeg)
@@ -224,7 +224,7 @@ def plotting(lags_s,corr_s,fs_eeg, snr_s, output_dir, subject_id, trial_id):
 
         ax.plot(lags_ms[peak_idx], peak_val, marker='x', color='black', markersize=8, mew=2)
 
-        # 5. Aesthetics: Limits, Labels, and Spines
+        #labels
         ax.set_xlim([-300, 300])
         #ax.set_ylim([-1.1, 1.1])
         ax.set_title(f"IC {i+1}", fontsize=12, fontweight='bold', pad=10)
@@ -247,21 +247,21 @@ def plotting(lags_s,corr_s,fs_eeg, snr_s, output_dir, subject_id, trial_id):
         fig.delaxes(axes[j])
 
     fig.suptitle("Correlation-based CI artifact reduction – cors-ica", fontsize=18, y=0.98)
-    fig.suptitle(f"Cross-Correlation plot of all Independent Components\n"
+    fig.suptitle(f"Cross-Correlation plots of all Independent Components\n"
              f"Subject: {subject_id} | Trial: {trial_id}", 
              fontsize=16, fontweight='bold', y=0.98)
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
 
     #one pdf with everything
-    plt.savefig(output_dir / f"corsica_correlation_ic_subject_{subject_id}_trial_{trial_id}.pdf")
+    plt.savefig(output_dir / f"{subject_id}_corsica_correlation_ic_trial_{trial_id}.pdf")
 
     plt.close(fig)
 
     return 
 
-def calculate_metadata(ics, exclude, snr_s, peak_in_seconds_after_stimulus_s, output_dir):
-    #values to save
+def calculate_metadata(ics, exclude, snr_s, peak_in_seconds_after_stimulus_s, output_dir, subject_id, trial_id):
+    #calculate values
     number_of_ics= ics.n_components_
     number_excluded_ics = len(exclude) 
     percentage_remaining_ics = (number_of_ics - number_excluded_ics) / number_of_ics * 100
@@ -277,6 +277,7 @@ def calculate_metadata(ics, exclude, snr_s, peak_in_seconds_after_stimulus_s, ou
     mean_snr_excluded = np.mean(excluded_snr_values) if excluded_snr_values else float('nan')
 
     data = {
+        "Trial ID": trial_id,
         "Number of independent components": number_of_ics,
         "Number of excluded ICs": number_excluded_ics,
         "Indices of excluded ICs": exclude,
@@ -294,6 +295,20 @@ def calculate_metadata(ics, exclude, snr_s, peak_in_seconds_after_stimulus_s, ou
         "Mean SNR of excluded ICs": round(mean_snr_excluded, 3),
     }
 
+
     df = pd.DataFrame([data])
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    df.to_csv(output_dir / f"eeg_metrics_{timestamp}.csv", index=False)
+
+    # filename per subject
+    output_dir = Path(output_dir)
+    csv_file = output_dir / f"{subject_id}_corsica_eeg_metrics.csv"
+
+    # check if file exists
+    file_exists = csv_file.exists()
+
+    # append row
+    df.to_csv(
+        csv_file,
+        mode="a",
+        header=not file_exists,
+        index=False
+    )

@@ -9,6 +9,22 @@ description = "Package to reduce artifacts in eeg from cochlear implant stimuli"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.9"
 authors = [
-  {name = "muster"}
+  { name = "Constantin Jehn", email = "constantin.jehn@fau.de" }
 ]
+
+requires-python = ">=3.12"
+
+keywords = [
+  "eeg",
+  "ci",
+  "cochlear-implant",
+  "artifact-rejection"
+]
+
+[project.urls]
+Repository = "https://github.com/LeonieRichterFAU/cors-ica"
+Paper (under review) = "https://arxiv.org/abs/2501.12345"
+
+
 dependencies = []
+
